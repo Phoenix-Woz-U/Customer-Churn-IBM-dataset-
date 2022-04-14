@@ -1,7 +1,7 @@
 library(readxl)
 library(tidyverse)
 library(dplyr)
-Telco<- read_excel("C:/Users/Richmond/Desktop/WOZ-U/FINAL PROJECT/Telco.xlsx")
+Telco<- read_excel("Data/Telco.xlsx")
 View(Telco)
 
 colnames(Telco) #View all column names in order
