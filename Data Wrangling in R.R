@@ -1,10 +1,12 @@
 library(readxl)
 library(tidyverse)
 library(dplyr)
-Telco<- read_excel("Data/Telco.xlsx")
+library(polycor)
+Telco<- read_excel("C:/Users/Richmond/Documents/GitHub/Customer-Churn-IBM-dataset-/Data/Telco.xlsx")
 View(Telco)
 
 colnames(Telco) #View all column names in order
+
 
 #Drop first 9 columns and the column named "Churn Label" by subsetting dataset
 Telco1<- Telco[ -c(1:9,29,33) ]
@@ -13,8 +15,8 @@ Telco1<- Telco[ -c(1:9,29,33) ]
 str(Telco2) 
 
 #Replace/remove spaces in column names
-names(Telco1) <- gsub(" ","", names(Telco1))
-View(Telco2)
+names(Telco1) <- gsub(" ","_", names(Telco1))
+View(Telco1)
 
 #View unique values in each variable column
 unique(Telco2[c("Payment_Method")])
@@ -29,7 +31,7 @@ Telco1$Phone_Service = as.factor(Telco1$Phone_Service)
 Telco1$Paperless_Billing = as.factor(Telco1$Paperless_Billing)
 Telco1$Churn_Value = as.factor(Telco1$Churn_Value)
 
-Telco2<- Telco1[ -c(23:27) ]
+Telco2<- Telco1
 
 #CATEGORICAL VARIABLES WITH 3 LEVELS OR MORE
 
@@ -124,4 +126,30 @@ Telco2$Payment_MethodR[Telco2$Payment_Method=='Credit card (automatic)'] <- 3
 
 Telco2$Payment_MethodR = as.factor(Telco2$Payment_MethodR)
 Telco2$Payment_MethodRR = relevel(Telco2$Payment_MethodR, ref ="0")
+
+
+#Subset dataframe to be used for Analysis
+
+Telco3 = Telco2[c("Gender","Senior_Citizen","Partner","Dependents","Tenure_Months","Phone_Service","Paperless_Billing","Multiple_LinesRR",
+                  "Internet_ServiceRR","Online_SecurityRR","Online_BackupRR","Device_ProtectionRR","Tech_SupportRR","Streaming_TVRR",
+                  "Streaming_MoviesRR","ContractRR","Payment_MethodRR","Monthly_Charges","Churn_Value")]
+
+
+## ANALYSIS
+
+#Baseline
+FitAll = lm(as.numeric(Churn_Value) ~ ., data = Telco3)
+summary(FitAll)
+
+str(Telco3)
+
+#Resolve error message: Coefficients: (7 not defined because of singularities)
+hetcor(Telco3) #still error
+
+
+#Backward Elimination
+
+step(FitAll, direction = 'backward')
+
+
 
