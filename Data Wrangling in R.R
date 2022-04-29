@@ -2,7 +2,11 @@ library(readxl)
 library(tidyverse)
 library(dplyr)
 library(polycor)
-Telco<- read_excel("C:/Users/Richmond/Documents/GitHub/Customer-Churn-IBM-dataset-/Data/Telco.xlsx")
+library(tidyr)
+library("Hmisc")
+library(corrplot)
+
+Telco<- read_excel("./Data/Telco.xlsx")
 View(Telco)
 
 colnames(Telco) #View all column names in order
@@ -10,9 +14,11 @@ colnames(Telco) #View all column names in order
 
 #Drop first 9 columns and the column named "Churn Label" by subsetting dataset
 Telco1<- Telco[ -c(1:9,29,33) ]
+Telco1 <- na.omit(Telco1)
 
 #View datatype for each variable
-str(Telco2) 
+str(Telco2)
+
 
 #Replace/remove spaces in column names
 names(Telco1) <- gsub(" ","_", names(Telco1))
@@ -141,15 +147,7 @@ Telco3 = Telco2[c("Gender","Senior_Citizen","Partner","Dependents","Tenure_Month
 FitAll = lm(as.numeric(Churn_Value) ~ ., data = Telco3)
 summary(FitAll)
 
-str(Telco3)
-
-#Resolve error message: Coefficients: (7 not defined because of singularities)
-hetcor(Telco4) #still error
-
-
-#Backward Elimination
-
-step(FitAll, direction = 'backward')
+# Error message: Coefficients: (7 not defined because of singularities)
 
 
 ####################
@@ -217,21 +215,57 @@ Telco4$Paperless_Billing  [Telco4$Paperless_Billing  == 'No'] <- 0
 Telco4$Paperless_Billing  [Telco4$Paperless_Billing  == 'Yes'] <- 1
 Telco4$Paperless_Billing  <- as.numeric(Telco4$Paperless_Billing )
 
-str(Telco4)
+str(Telco3)
 unique(Telco4[c("Paperless_Billing")])
 
-cor(Telco4)    # Run Correlation Test
-#Result: "Streaming_MoviesRR" and "Payment Method" have perfect correlation, so one of them will be removed from Regression analysis
-            
 
-# Conducting Stepwise Regression Analysis Again (without Streaming_MoviesRR)
+# Run/plot Correlation Test
 
-Baseline = lm(as.numeric(Churn_Value) ~ Gender + Senior_Citizen + Partner + Dependents + Tenure_Months + Phone_Service + Paperless_Billing + Multiple_LinesRR +
-                  Internet_ServiceRR + Online_SecurityRR + Online_BackupRR + Device_ProtectionRR + Tech_SupportRR + Streaming_TVRR + 
-                  + ContractRR + Payment_MethodRR + Monthly_Charges, data = Telco3)
+Telco4.cor = cor(Telco4, method = c("pearson"))
+View(Telco4.cor)
+corrplot(Telco4.cor)
+
+# Output shows the ff variables cause multicollinearity: Multiple_LinesRR, Internet_ServiceRR, Online_SecurityRR, Online_BackupRR, Device_ProtectionRR, Streaming_MoviesRR, Streaming_TVRR
+# These variables should be excluded from the analysis 
+
+           
+# STEPWISE REGRESSION ANALYSES
+
+#Baseline6 = lm(as.numeric(Churn_Value) ~ Gender + Senior_Citizen + Partner + Dependents + Tenure_Months + Phone_Service + Paperless_Billing + Multiple_LinesRR +
+                #Internet_ServiceRR + Online_SecurityRR + Online_BackupRR + Device_ProtectionRR + Tech_SupportRR + Streaming_TVRR + 
+                #+ ContractRR + Payment_MethodRR + Monthly_Charges, data = Telco3)
+#summary(Baseline6)
+
+
+## Backward Elimination
+Baseline = lm(as.numeric(Churn_Value) ~ Gender + Senior_Citizen + Partner + Dependents + Tenure_Months + Phone_Service + Paperless_Billing  + Tech_SupportRR + 
+                ContractRR + Payment_MethodRR + Monthly_Charges, data = Telco3)
+
 summary(Baseline)
-
-
 step(Baseline, direction = 'backward')
 
+fitsome = lm(as.numeric(Churn_Value) ~ Senior_Citizen + Partner + Dependents + Tenure_Months + Phone_Service + Paperless_Billing + 
+               Tech_SupportRR + ContractRR + Payment_MethodRR + Monthly_Charges, data = Telco3)
 
+summary(fitsome)
+
+
+## Forward Selection
+Baseline1 = lm(as.numeric(Churn_Value) ~ 1, data = Telco3)
+summary(Baseline1)
+
+step(Baseline1, direction = 'forward', scope = (formula(Baseline)))
+
+fitsome1 = lm(formula = as.numeric(Churn_Value) ~ ContractRR + Tech_SupportRR + Dependents + Tenure_Months + Monthly_Charges + Payment_MethodRR + 
+     Phone_Service + Paperless_Billing + Partner + Senior_Citizen, data = Telco3)
+
+summary(fitsome1)
+
+
+## Hybrid
+step(Baseline1, direction="both", scope=formula(Baseline))
+
+fitsome2 = lm(formula = as.numeric(Churn_Value) ~ ContractRR + Tech_SupportRR + Dependents + Tenure_Months + Monthly_Charges + Payment_MethodRR + 
+                Phone_Service + Paperless_Billing + Partner + Senior_Citizen, data = Telco3)
+
+summary(fitsome2)
