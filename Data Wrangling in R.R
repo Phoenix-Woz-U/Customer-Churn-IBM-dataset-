@@ -19,7 +19,7 @@ names(Telco1) <- gsub(" ","_", names(Telco1))
 View(Telco1)
 
 #View unique values in each variable column
-unique(Telco2[c("Payment_Method")])
+unique(Telco4[c("Gender")])
 
 #Convert two-level categorical variables to factor for Regression Analysis
 
@@ -144,12 +144,94 @@ summary(FitAll)
 str(Telco3)
 
 #Resolve error message: Coefficients: (7 not defined because of singularities)
-hetcor(Telco3) #still error
+hetcor(Telco4) #still error
 
 
 #Backward Elimination
 
 step(FitAll, direction = 'backward')
 
+
+####################
+# DATA WRANGLING TO RUN CORRELATION MATRIX, IN ORDER TO CORRECT FOR MULTICOLLINEARITY
+
+Telco4 <- Telco3
+str(Telco4)
+
+
+Telco4$Multiple_LinesRR  <- as.numeric(as.character(Telco4$Multiple_LinesRR ))
+
+Telco4$Internet_ServiceRR  <- as.numeric(as.character(Telco4$Internet_ServiceRR ))
+
+Telco4$Online_SecurityRR  <- as.numeric(as.character(Telco4$Online_SecurityRR ))
+
+Telco4$Online_BackupRR  <- as.numeric(as.character(Telco4$Online_BackupRR ))
+
+Telco4$Device_ProtectionRR  <- as.numeric(as.character(Telco4$Device_ProtectionRR ))
+
+Telco4$Tech_SupportRR    <- as.numeric(as.character(Telco4$Tech_SupportRR   ))
+
+Telco4$Streaming_TVRR   <- as.numeric(as.character(Telco4$Streaming_TVRR  ))
+
+Telco4$Streaming_MoviesRR  <- as.numeric(as.character(Telco4$Streaming_MoviesRR ))
+
+Telco4$ContractRR   <- as.numeric(as.character(Telco4$ContractRR  ))
+
+Telco4$Payment_MethodRR  <- as.numeric(as.character(Telco4$Streaming_MoviesRR ))
+
+Telco4$Churn_Value   <- as.numeric(as.character(Telco4$Churn_Value  ))
+
+
+Telco4$Gender  <- as.character(Telco4$Gender )
+Telco4$Gender[Telco4$Gender== 'Male'] <- 0
+Telco4$Gender[Telco4$Gender== 'Female'] <- 1
+Telco4$Gender  <- as.numeric(Telco4$Gender )
+
+
+Telco4$Senior_Citizen   <- as.character(Telco4$Senior_Citizen )
+Telco4$Senior_Citizen [Telco4$Senior_Citizen == 'No'] <- 0
+Telco4$Senior_Citizen [Telco4$Senior_Citizen == 'Yes'] <- 1
+Telco4$Senior_Citizen   <- as.numeric(Telco4$Senior_Citizen)
+
+
+Telco4$Partner   <- as.character(Telco4$Partner)
+Telco4$Partner [Telco4$Partner == 'No'] <- 0
+Telco4$Partner [Telco4$Partner == 'Yes'] <- 1
+Telco4$Partner   <- as.numeric(Telco4$Partner  )
+
+
+Telco4$Dependents   <- as.character(Telco4$Dependents)
+Telco4$Dependents [Telco4$Dependents == 'No'] <- 0
+Telco4$Dependents [Telco4$Dependents == 'Yes'] <- 1
+Telco4$Dependents   <- as.numeric(Telco4$Dependents)
+
+
+Telco4$Phone_Service  <- as.character(Telco4$Phone_Service )
+Telco4$Phone_Service  [Telco4$Phone_Service  == 'No'] <- 0
+Telco4$Phone_Service  [Telco4$Phone_Service  == 'Yes'] <- 1
+Telco4$Phone_Service    <- as.numeric(Telco4$Phone_Service )
+
+
+Telco4$Paperless_Billing  <- as.character(Telco4$Paperless_Billing )
+Telco4$Paperless_Billing  [Telco4$Paperless_Billing  == 'No'] <- 0
+Telco4$Paperless_Billing  [Telco4$Paperless_Billing  == 'Yes'] <- 1
+Telco4$Paperless_Billing  <- as.numeric(Telco4$Paperless_Billing )
+
+str(Telco4)
+unique(Telco4[c("Paperless_Billing")])
+
+cor(Telco4)    # Run Correlation Test
+#Result: "Streaming_MoviesRR" and "Payment Method" have perfect correlation, so one of them will be removed from Regression analysis
+            
+
+# Conducting Stepwise Regression Analysis Again (without Streaming_MoviesRR)
+
+Baseline = lm(as.numeric(Churn_Value) ~ Gender + Senior_Citizen + Partner + Dependents + Tenure_Months + Phone_Service + Paperless_Billing + Multiple_LinesRR +
+                  Internet_ServiceRR + Online_SecurityRR + Online_BackupRR + Device_ProtectionRR + Tech_SupportRR + Streaming_TVRR + 
+                  + ContractRR + Payment_MethodRR + Monthly_Charges, data = Telco3)
+summary(Baseline)
+
+
+step(Baseline, direction = 'backward')
 
 
